@@ -1,7 +1,3 @@
-// 14 oct 2019 to 10 march 2025
-// 5y 4 month
-// company name
-// globalinfogain pvt ltd
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -11,8 +7,8 @@ const mongoose = require('mongoose');
 // get all routes
 const allRoutes=require('./App/index')
 
+app.use(cors());
 app.use(express.json());
-
 app.use(allRoutes);
 
 // home routes
