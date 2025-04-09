@@ -2,7 +2,7 @@
 const userModal = require('../../modal/user/index')
 const nodemailer = require('nodemailer');
 
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 // user register function
 exports.userRegister = async (req, res) => {
