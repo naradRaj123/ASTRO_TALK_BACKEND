@@ -12,6 +12,7 @@ const mongoose = require('mongoose');
 // get all routes
 const allRoutes=require('./App/index')
 
+
 app.use(cors());
 app.use(express.json());
 app.use(allRoutes);
