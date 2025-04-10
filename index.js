@@ -1,3 +1,8 @@
+// pack 16
+// join 180k
+// 15 shifting charge
+
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');

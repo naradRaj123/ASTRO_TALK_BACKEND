@@ -27,9 +27,9 @@ exports.userRegister = async (req, res) => {
             password: hashPassword
         });
 
-        const userResponse = userData.save();
+        const userResponse = await userData.save();
         if (userResponse) {
-            const transporter = nodemailer.createTransport({
+            const transporter =await nodemailer.createTransport({
                 host: "smtp.gmail.com",
                 port: 465,
                 secure: true,
@@ -41,7 +41,7 @@ exports.userRegister = async (req, res) => {
             });
 
             // Send email
-            const mailsend = transporter.sendMail({
+            const mailsend =await transporter.sendMail({
                 from: process.env.EMAIL_USER, // sender address
                 to: `${email}`, // list of receivers
                 subject: "Astro Truth", // Subject line
