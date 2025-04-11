@@ -142,3 +142,98 @@ exports.loginUser = async (req, res) => {
         });
     }
 };
+
+// user data by id
+exports.UserInfoById = async (req, res) => {
+    const userId = req.params.id;
+    try {
+        const userData = await userModal.findById({ _id: userId })
+        if (!userData) {
+            return res.status(404).json({ status: false, msg: "user not found. please check the id.", });
+        }
+        return res.status(200).json({ status: 1, userData});
+    } catch (error) {
+        if (error?.kind === 'ObjectId') {
+            return res.status(400).json({ status: false, msg: "Invalid user ID. Please check the ID.", });
+        }
+        // Handle generic server error
+        return res.status(500).json({ status: false, msg: "An unexpected error occurred. Please try again later.", });
+    }
+}
+
+// user edit by id
+
+exports.EditByUserId = async (req, res) => {
+    const { user_id, user_name, user_email, user_phone, password } = req.body;
+
+    // Get user details by ID
+    const getUserData = await userModal.find({ _id: user_id });
+    if (!getUserData || getUserData.length === 0) {
+        return res.status(404).json({ status: false, msg: "User not found" });
+    }
+
+    const userObjData = getUserData[0].toObject();
+
+    const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
+        requireTLS: true,
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
+        },
+    });
+
+    try {
+        const updateData = {};
+        if (user_name) updateData.user_name = user_name;
+        if (user_email) updateData.email = user_email;
+        if (user_phone) updateData.user_phone = user_phone;
+        if (password) updateData.password = password;
+
+        const result = await userModal.updateOne(
+            { _id: user_id },
+            { $set: updateData }
+        );
+
+        console.log(result);
+
+        if (result.modifiedCount > 0) {
+            // ✅ Send success email
+            await transporter.sendMail({
+                from: 'infoastrotruth@gmail.com',
+                to: user_email || userObjData.email,
+                subject: "✅ Profile Updated Successfully",
+                html: `<p>Hello ${user_name || userObjData.user_name},</p>
+                       <p>Your profile has been updated successfully.</p>`
+            });
+
+            return res.status(200).json({ status: 1, msg: "Update Successfully" });
+        } else {
+            // ❌ Send failed update email
+            await transporter.sendMail({
+                from: 'infoastrotruth@gmail.com',
+                to: user_email || userObjData.email,
+                subject: "⚠️ Profile Update Failed",
+                html: `<p>Hello ${user_name || userObjData.user_name},</p>
+                       <p>We tried to update your profile, but nothing was changed.</p>`
+            });
+
+            return res.status(500).json({ status: false, msg: "Update Failed" });
+        }
+    } catch (error) {
+        console.error(error);
+
+        // ❌ Handle unexpected error and notify user
+        await transporter.sendMail({
+            from: 'infoastrotruth@gmail.com',
+            to: user_email || userObjData.email,
+            subject: "❗ Error During Profile Update",
+            html: `<p>Hello,</p>
+                   <p>There was an error while updating your profile: ${error.message}</p>`
+        });
+
+        return res.status(500).json({ status: false, msg: "Internal Server Error" });
+    }
+};
