@@ -1,6 +1,7 @@
 // user modal
 const userModal = require('../../modal/user/index')
 const nodemailer = require('nodemailer');
+const mongoose=require('mongoose');
 
 const bcrypt = require('bcryptjs');
 const jwt=require('jsonwebtoken');
@@ -146,6 +147,12 @@ exports.loginUser = async (req, res) => {
 // user data by id
 exports.UserInfoById = async (req, res) => {
     const userId = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(400).json({
+            status: false,
+            msg: "Invalid user ID.",
+        });
+    }
     try {
         const userData = await userModal.findById({ _id: userId })
         if (!userData) {
@@ -165,6 +172,13 @@ exports.UserInfoById = async (req, res) => {
 
 exports.EditByUserId = async (req, res) => {
     const { user_id, user_name, user_email, user_phone, password } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(user_id)) {
+        return res.status(400).json({
+            status: false,
+            msg: "Invalid user ID.",
+        });
+    }
 
     // Get user details by ID
     const getUserData = await userModal.find({ _id: user_id });

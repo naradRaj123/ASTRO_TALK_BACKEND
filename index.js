@@ -8,14 +8,24 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 const mongoose = require('mongoose');
+const bodyParser=require('body-parser');
+const fs=require('fs')
+const path=require('path');
+
 
 // get all routes
 const allRoutes=require('./App/index')
 
 
+
 app.use(cors());
 app.use(express.json());
+app.use(bodyParser.json({limit:'10mb'}))
 app.use(allRoutes);
+
+//image upload access
+app.use(express.static('public'));
+app.use("/upload",express.static('upload'));
 
 // home routes
 app.get('/', async (req, res) => {
