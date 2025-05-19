@@ -4,9 +4,9 @@ const express=require('express');
 
 const router=express.Router();
 const astroController=require('../../controller/astrologer/index')
-const singUploadImage=require('../../multer');
+const upload=require('../../multer');
 
-// router.post('/web/astro',singUploadImage.single('img'),astroController.registerAstrologer)
-router.post('/web/astro',astroController.registerAstrologer)
+router.post('/web/astro',upload.fields([{ name: 'profileimg', maxCount: 1 }, { name: 'govDoc', maxCount: 1 }]),astroController.registerAstrologer)
+router.post('/web/astro/login',astroController.loginAstro)
 
 module.exports=router;

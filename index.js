@@ -20,11 +20,11 @@ const allRoutes=require('./App/index')
 
 app.use(cors());
 app.use(express.json());
-app.use(bodyParser.json({limit:'10mb'}))
+// app.use(bodyParser.json({limit:'10mb'}))
 app.use(allRoutes);
 
 //image upload access
-app.use(express.static('public'));
+// app.use(express.static('public'));
 app.use("/upload",express.static('upload'));
 
 // home routes
