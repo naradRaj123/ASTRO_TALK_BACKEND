@@ -1,56 +1,61 @@
-// pack 16
-// join 180k
-// 15 shifting charge
-
+// Server setup for AstroTalk-like app using Express, MongoDB, and Socket.io
 
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const app = express();
 const mongoose = require('mongoose');
-const bodyParser=require('body-parser');
-const fs=require('fs')
-const path=require('path');
+const bodyParser = require('body-parser');
+const fs = require('fs');
+const path = require('path');
 
+// Create Express app
+const app = express();
 
-// get all routes
-const allRoutes=require('./App/index')
+// Create HTTP server for Socket.io
+const http = require('http');
+const server = http.createServer(app);
 
+// Setup Socket.io with CORS
+// const { Server } = require('socket.io');
+// const io = new Server(server, {
+//   cors: {
+//     origin: '*',
+//     methods: ['GET', 'POST']
+//   }
+// });
 
+// Export io if you want to use it in other files
+// module.exports.io = io;
 
+// Middleware setup
 app.use(cors());
 app.use(express.json());
-// app.use(bodyParser.json({limit:'10mb'}))
+app.use(bodyParser.json({ limit: '10mb' })); // optional if sending large payloads
+
+// Static folder for uploaded files
+app.use('/upload', express.static('upload'));
+
+// Import and use all routes
+const allRoutes = require('./App/index');
 app.use(allRoutes);
 
-//image upload access
-// app.use(express.static('public'));
-app.use("/upload",express.static('upload'));
+// Health check route
+app.get('/', (req, res) => {
+  res.status(200).json({ status: true, msg: 'API is working and connected to database' });
+});
 
-// home routes
-app.get('/', async (req, res) => {
-        try {
-                // You can optionally check DB connection here
-                return res.status(200).json({ status: true, msg: "Database connected successfully" });
-        } catch (error) {
-                return res.status(500).json({ status: false, msg: "Failed to connect to database", error: error.message });
-        }
-})
-
-
-const PORT = process.env.PORT || 8000;
-// console.log(`Server is running on port ${PORT}`);
-// console.log(`Database Connect sucessfully`);
-
-mongoose.connect(process.env.MONGODB_URI)
-        .then(() => {
-                console.log(`Server is running on port ${PORT}`);
-                console.log(`Database Connect sucessfully`);
-                app.listen(`${PORT}`);
-        })
-
-
-
-
+// MongoDB connection
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}).then(() => {
+  const PORT = process.env.PORT || 8000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server is running on port ${PORT}`);
+    console.log(`✅ Connected to MongoDB`);
+  });
+}).catch((err) => {
+  console.error('❌ MongoDB connection error:', err.message);
+});
 
 
