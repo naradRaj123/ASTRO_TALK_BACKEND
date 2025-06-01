@@ -68,7 +68,21 @@ const astroLogerSchema=new mongoose.Schema({
     bankDetails:{
         type:String,
         default:null
+    },
+    agoraChannel:{
+        type:String,
+        unique:true,
+        default:null,
+    },
+    agoraUID:{
+        type:Number,
+        default:null
+    },
+    agoraToken:{
+        type:String,
+        default:null
     }
+
    
 },{
     timeseries:true,
