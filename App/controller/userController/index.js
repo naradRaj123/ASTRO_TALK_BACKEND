@@ -13,7 +13,7 @@ exports.userRegister = async (req, res) => {
 
     try {
         // Check if email already exists
-        const userExists = await userModal.findOne({ user_email });
+        const userExists = await userModal.findOne({ email });
         if (userExists) {
             return res.status(409).json({ status: 0, msg: 'Email already exists. Please try another email.' });
         }
@@ -26,7 +26,7 @@ exports.userRegister = async (req, res) => {
         let userData = new userModal({
             user_name: name,
             user_phone: phone,
-            user_email,
+            email:email,
             password: hashPassword
         });
 
