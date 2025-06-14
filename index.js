@@ -19,10 +19,7 @@ const io = new Server(server, {
 });
 
 // Middlewares
-app.use(cors({
-  origin: 'https://astro-talk-backend.onrender.com/',
-  credentials: true,
-}));
+app.use(cors());
 app.use(express.json());
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use('/upload', express.static('upload'));
