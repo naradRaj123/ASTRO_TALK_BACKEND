@@ -21,6 +21,7 @@ const deleteFileIfExists = (filepath) => {
 
 // generate function 
 const { RtcTokenBuilder, RtcRole } = require("agora-access-token");
+const astrologer_schema = require('../../modal/astrologer/index');
 
 const APP_ID = 'f9380eb239b64da997b887ea4823b509';
 const APP_CERTIFICATE ='0a6fdb64aa714a1ba1991fe97cc11eb2'
@@ -45,6 +46,72 @@ function generateAgoraToken(channelName, uid) {
   return token;
 }
 
+let io = null;
+
+// Setter function to inject io
+exports.setSocketIO = (ioInstance) => {
+  io = ioInstance;
+};
+
+exports.GetToken= async (req,res)=>{
+   try {
+    const { userId, astrologerId } = req.query;
+
+    if (!userId || !astrologerId) {
+      return res.status(400).json({ error: "Missing userId or astrologerId" });
+    }
+
+    const uid = Math.floor(Math.random() * 1000000); // Or userId hashed if numeric
+    const channelName = `astro_${userId}_${Date.now()}`;
+    const expirationTimeInSeconds = 3600;
+    const currentTimestamp = Math.floor(Date.now() / 1000);
+    const privilegeExpiredTs = currentTimestamp + expirationTimeInSeconds;
+
+    const token = RtcTokenBuilder.buildTokenWithUid(
+      APP_ID,
+      APP_CERTIFICATE,
+      channelName,
+      uid,
+      RtcRole.PUBLISHER,
+      privilegeExpiredTs
+    );
+
+    return res.json({ token, channelName, uid });
+  } catch (err) {
+    console.error("Token generation error:", err);
+    return res.status(500).json({ error: "Token generation failed" });
+  }
+
+}
+
+exports.GetTokenOfAstrologer=async(req,res)=>{
+   try {
+    const { channelname, Uid } = req.query;
+
+    if (!channelname || !Uid) {
+      return res.status(400).json({ error: "Missing channelname or Uid" });
+    }
+
+    const uid = parseInt(Uid);
+    const expirationTimeInSeconds = 3600;
+    const currentTimestamp = Math.floor(Date.now() / 1000);
+    const privilegeExpiredTs = currentTimestamp + expirationTimeInSeconds;
+
+    const token = RtcTokenBuilder.buildTokenWithUid(
+      APP_ID,
+      APP_CERTIFICATE,
+      channelname,
+      uid,
+      RtcRole.PUBLISHER,
+      privilegeExpiredTs
+    );
+
+    return res.json({ token, channelName: channelname, uid });
+  } catch (err) {
+    console.error("Astrologer token error:", err);
+    return res.status(500).json({ error: "Token generation failed" });
+  }
+}
 
 // astrologer register
 // exports.registerAstrologer = async (req, res) => {
@@ -186,7 +253,7 @@ function generateAgoraToken(channelName, uid) {
 //   // res.send("don");
 // }
 exports.registerAstrologer = async (req, res) => {
-  const { astroName, astroDob, mobile, email, password, city, experience, expertise, langauge, shortBio, chargePerSession, availableTime, bankDetails } = req.body;
+  const { astroName, astroDob, mobile, email, password, city, experience, expertise, langauge, shortBio, chargePerSession, availableTime, bankDetails,role } = req.body;
 
   const profilePic = req.files?.profileimg?.[0]?.filename || null;
   const govDoc = req.files?.govDoc?.[0]?.filename || null;
@@ -233,6 +300,7 @@ exports.registerAstrologer = async (req, res) => {
       profileImg: profilePic,
       verifyDocument: govDoc,
       agoraChannel: channelName,
+      role:role,
       agoraUID: uid,
       agoraToken: agoraToken,
       isApproved: false,

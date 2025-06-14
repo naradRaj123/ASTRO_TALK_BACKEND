@@ -69,6 +69,10 @@ const astroLogerSchema=new mongoose.Schema({
         type:String,
         default:null
     },
+    role:{
+        type:String,
+        default:null,
+    },
     agoraChannel:{
         type:String,
         unique:true,
