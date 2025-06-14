@@ -14,4 +14,10 @@ router.get('/web/astro/astrolist',astroController.astrolist);
 // astrologer audio call
 // router.post('/api/start-call',astroController.astroCall)
 
+// get token for calling
+router.get('/web/agora/token',astroController.GetToken)
+
+// get token for astrologer calling
+router.get('/web/agora/astro/token',astroController.GetTokenOfAstrologer);
+
 module.exports=router;
