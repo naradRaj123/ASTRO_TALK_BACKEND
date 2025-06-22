@@ -22,7 +22,21 @@ const UserRegisterSchema=new mongoose.Schema({
         require:true,
         default:null,
     },
-   
+    wallet:{
+        type:Number,
+        require:true,
+        default:50
+    },
+   dob:{
+    type:String,
+    require:true,
+    default:null,    
+   },
+   status:{
+    type:Boolean,
+    require:true,
+    default:true,    
+   }
 },{
     timeseries:true,
 });

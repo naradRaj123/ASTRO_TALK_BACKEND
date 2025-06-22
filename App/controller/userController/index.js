@@ -1,15 +1,15 @@
 // user modal
 const userModal = require('../../modal/user/index')
 const nodemailer = require('nodemailer');
-const mongoose=require('mongoose');
+const mongoose = require('mongoose');
 
 const bcrypt = require('bcryptjs');
-const jwt=require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 
 // user register function
 exports.userRegister = async (req, res) => {
-    const { name, email, password, phone } = req.body;
-    const user_email=email.toLowerCase()
+    const { name, email, password, mobile } = req.body;
+    const user_email = email.toLowerCase()
 
     try {
         // Check if email already exists
@@ -25,14 +25,14 @@ exports.userRegister = async (req, res) => {
         // Create new user
         let userData = new userModal({
             user_name: name,
-            user_phone: phone,
-            email:email,
+            user_phone: mobile,
+            email: email,
             password: hashPassword
         });
 
         const userResponse = await userData.save();
         if (userResponse) {
-            const transporter =await nodemailer.createTransport({
+            const transporter = await nodemailer.createTransport({
                 host: "smtp.gmail.com",
                 port: 465,
                 secure: true,
@@ -44,7 +44,7 @@ exports.userRegister = async (req, res) => {
             });
 
             // Send email
-            const mailsend =await transporter.sendMail({
+            const mailsend = await transporter.sendMail({
                 from: process.env.EMAIL_USER, // sender address
                 to: `${user_email}`, // list of receivers
                 subject: "Astro Truth", // Subject line
@@ -114,6 +114,8 @@ exports.loginUser = async (req, res) => {
             return res.status(404).json({ status: 0, msg: "User not found" });
         }
 
+        if(!userData.status) return res.status(403).json({ status: 0, msg: "Your account is deactivated. Please contact support." })
+
         // Compare password
         const isMatch = await bcrypt.compare(password, userData.password);
         if (!isMatch) {
@@ -158,7 +160,7 @@ exports.UserInfoById = async (req, res) => {
         if (!userData) {
             return res.status(404).json({ status: false, msg: "user not found. please check the id.", });
         }
-        return res.status(200).json({ status: 1, userData});
+        return res.status(200).json({ status: 1, userData });
     } catch (error) {
         if (error?.kind === 'ObjectId') {
             return res.status(400).json({ status: false, msg: "Invalid user ID. Please check the ID.", });
@@ -251,3 +253,41 @@ exports.EditByUserId = async (req, res) => {
         return res.status(500).json({ status: false, msg: "Internal Server Error" });
     }
 };
+
+// userlist 
+exports.Userlist=async(req,res)=>{
+     try {
+        const userList = await userModal.find({}, { password: 0 });
+        if (!userList) return res.status(404).json({ status: false, msg: "Astrologer not Available !" })
+        return res.status(200).json({ status: true, data: userList })
+      } catch (error) {
+        return res.status(500).json({ status: false, msg: "Something went wrong please try sometime" });
+      }
+}
+
+
+// user update status by id (admin)
+exports.UpdateStatus = async (req, res) => {
+    try {
+        const { userId } = req.body;
+        // check id formate
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ status: false, msg: "Invalid user ID format" });
+        }
+
+        const userData = await userModal.findById({ _id: userId });
+        // user match
+        if (!userData) return res.status(409).json({ status: false, msg: "User not found" });
+        
+        // updae
+        userData.status = !userData.status;
+        await userData.save();
+       return res.status(200).json({ status: true, msg: `User status updated to ${userData.status ? 'Active' : 'Deactive'}` });
+
+    } catch (error) {
+        return res.status(500).json({ status: false, msg: "Something Went to wrong try something" });
+    }
+
+
+
+}
