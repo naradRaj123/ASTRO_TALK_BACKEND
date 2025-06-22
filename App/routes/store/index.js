@@ -3,10 +3,11 @@ const express=require('express');
 
 const router=express.Router();
 
-const StoreModal=require('../../modal/category/index');
-const CategoryController=require('../../controller/product/category/index');
+
+const productController=require('../../controller/productController/index');
 const upload=require('../../multer');
 
-router.post('/web/addcate',upload.single('coverimg'),CategoryController.AddCategory);
+router.post('/web/addproduct',upload.single('coverimg'),productController.AddProduct);
+router.post('/paynow',productController.Paynow);
 
 module.exports=router

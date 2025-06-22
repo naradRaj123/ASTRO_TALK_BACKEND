@@ -54,7 +54,7 @@ const astroLogerSchema=new mongoose.Schema({
         default:null,
     },
     chargePerSession:{
-        type:String,
+        type:Number,
         default:null,
     },
     availableTime:{
@@ -85,9 +85,22 @@ const astroLogerSchema=new mongoose.Schema({
     agoraToken:{
         type:String,
         default:null
-    }
-
-   
+    },
+    wallet:{
+        type:Number,
+        default:100,
+        require:true,
+    },
+    status:{
+        type:Boolean,
+        default:true,
+        require:true,
+    },
+    accountType:{
+        type:String,
+        default:"Normal",
+        require:true
+    }   
 },{
     timeseries:true,
 });

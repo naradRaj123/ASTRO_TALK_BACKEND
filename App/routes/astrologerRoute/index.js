@@ -20,4 +20,10 @@ router.get('/web/agora/token',astroController.GetToken)
 // get token for astrologer calling
 router.get('/web/agora/astro/token',astroController.GetTokenOfAstrologer);
 
+
+// admin api action
+router.post('/admin/astroUpdate',astroController.AstroAction);
+router.post('/admin/astroChargeUpdate',astroController.UpdateChargeById);
+
+
 module.exports=router;

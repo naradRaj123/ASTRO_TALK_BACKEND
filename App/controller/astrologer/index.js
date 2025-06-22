@@ -22,9 +22,10 @@ const deleteFileIfExists = (filepath) => {
 // generate function 
 const { RtcTokenBuilder, RtcRole } = require("agora-access-token");
 const astrologer_schema = require('../../modal/astrologer/index');
+const { default: mongoose } = require('mongoose');
 
 const APP_ID = 'f9380eb239b64da997b887ea4823b509';
-const APP_CERTIFICATE ='0a6fdb64aa714a1ba1991fe97cc11eb2'
+const APP_CERTIFICATE = '0a6fdb64aa714a1ba1991fe97cc11eb2'
 function generateAgoraToken(channelName, uid) {
   if (!APP_ID || !APP_CERTIFICATE) {
     throw new Error("Agora APP_ID or APP_CERTIFICATE is not defined in environment variables");
@@ -53,8 +54,8 @@ exports.setSocketIO = (ioInstance) => {
   io = ioInstance;
 };
 
-exports.GetToken= async (req,res)=>{
-   try {
+exports.GetToken = async (req, res) => {
+  try {
     const { userId, astrologerId } = req.query;
 
     if (!userId || !astrologerId) {
@@ -84,8 +85,8 @@ exports.GetToken= async (req,res)=>{
 
 }
 
-exports.GetTokenOfAstrologer=async(req,res)=>{
-   try {
+exports.GetTokenOfAstrologer = async (req, res) => {
+  try {
     const { channelname, Uid } = req.query;
 
     if (!channelname || !Uid) {
@@ -221,7 +222,7 @@ exports.GetTokenOfAstrologer=async(req,res)=>{
 //                               <div style="text-align: center; margin: 30px 0;">
 //                                   <a href="https://astrotalkproject.vercel.app/login" style="background-color: #4CAF50; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Login to Your Account</a>
 //                               </div>
-                                          
+
 //                               <p>If you have any questions or need support, feel free to contact our team at <a href="mailto:support@astrotruth.com">support@astrotruth.com</a>.</p>
 //                               <p>Thank you for joining us!<br>The Astro Truth Team</p>
 //                               </div>
@@ -253,7 +254,7 @@ exports.GetTokenOfAstrologer=async(req,res)=>{
 //   // res.send("don");
 // }
 exports.registerAstrologer = async (req, res) => {
-  const { astroName, astroDob, mobile, email, password, city, experience, expertise, langauge, shortBio, chargePerSession, availableTime, bankDetails,role } = req.body;
+  const { astroName, astroDob, mobile, email, password, city, experience, expertise, langauge, shortBio, chargePerSession, availableTime, bankDetails, role } = req.body;
 
   const profilePic = req.files?.profileimg?.[0]?.filename || null;
   const govDoc = req.files?.govDoc?.[0]?.filename || null;
@@ -300,7 +301,7 @@ exports.registerAstrologer = async (req, res) => {
       profileImg: profilePic,
       verifyDocument: govDoc,
       agoraChannel: channelName,
-      role:role,
+      role: role,
       agoraUID: uid,
       agoraToken: agoraToken,
       isApproved: false,
@@ -515,3 +516,56 @@ exports.astrolist = async (req, res) => {
 //   }
 
 // }
+
+
+// admin api action
+exports.AstroAction = async (req, res) => {
+  const { astroId } = req.body;
+  if (!mongoose.Types.ObjectId.isValid(astroId)) {
+    return res.status(400).json({ status: false, msg: "Invalid user ID format" });
+  }
+  try {
+    const astroData = await astroSchema.findById({ _id: astroId });
+    // user match
+    if (!astroData) return res.status(409).json({ status: false, msg: "Astrologer not found" });
+
+    // update
+    if (astroData.status === undefined) {
+      astroData.status = false; // default or your preferred value
+      await astroData.save();
+      return res.status(200).json({ status: true, msg: "Status field added", data: astro });
+    }
+    astroData.status = !astroData.status;
+    await astroData.save();
+    return res.status(200).json({ status: true, msg: `Astrologer status updated to ${astroData.status ? 'Active' : 'Deactive'}` });
+
+  } catch (error) {
+    return res.status(500).json({ status: false, msg: "Something Went to wrong try something" });
+  }
+}
+
+// update charges session
+exports.UpdateChargeById= async (req,res)=>{
+  const { astroId,sessionCharge,accountType } = req.body;
+  if (!mongoose.Types.ObjectId.isValid(astroId)) {
+    return res.status(400).json({ status: false, msg: "Invalid user ID format" });
+  }
+  try {
+    const astroData = await astroSchema.findById({ _id: astroId });
+    // user match
+    if (!astroData) return res.status(409).json({ status: false, msg: "Astrologer not found" });
+
+    // update
+    
+    const updatedAstro = await astroSchema.findByIdAndUpdate(
+      astroId,
+      { chargePerSession: sessionCharge , accountType }, 
+      {new:true }// returns the updated document
+    );
+    return res.status(200).json({ status: true, msg: `Astrologer Charges update` });
+
+  } catch (error) {
+    return res.status(500).json({ status: false, msg: "Something Went to wrong try something" });
+  }
+
+}
