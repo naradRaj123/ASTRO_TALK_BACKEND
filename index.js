@@ -11,15 +11,15 @@ const app = express();
 const server = http.createServer(app);
 
 // Setup Socket.IO
-const io = new Server(server, {
-  cors: {
-    origin: 'https://astro-talk-backend.onrender.com/',
-    methods: ['GET', 'POST'],
-  },
-});
+// const io = new Server(server, {
+//   cors: {
+//     origin: ['http://astrotruth.in'],
+//     methods: ['GET', 'POST'],
+//   },
+// });
 
 // Middlewares
-app.use(cors());
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use('/upload', express.static('upload'));
