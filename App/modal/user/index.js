@@ -36,6 +36,11 @@ const UserRegisterSchema=new mongoose.Schema({
     type:Boolean,
     require:true,
     default:true,    
+   },
+   user_img:{
+    type:String,
+    require:true,
+    default:null,
    }
 },{
     timeseries:true,

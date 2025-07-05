@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+
 // user register function
 exports.userRegister = async (req, res) => {
     const { name, email, password, mobile } = req.body;
@@ -173,7 +174,7 @@ exports.UserInfoById = async (req, res) => {
 // user edit by id
 
 exports.EditByUserId = async (req, res) => {
-    const { user_id, user_name, user_email, user_phone, password } = req.body;
+    const { user_id, user_name, user_email, user_phone, password,user_dob } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(user_id)) {
         return res.status(400).json({
@@ -187,7 +188,7 @@ exports.EditByUserId = async (req, res) => {
     if (!getUserData || getUserData.length === 0) {
         return res.status(404).json({ status: false, msg: "User not found" });
     }
-
+    // console.log(getUserData);
     const userObjData = getUserData[0].toObject();
 
     const transporter = nodemailer.createTransport({
@@ -207,25 +208,50 @@ exports.EditByUserId = async (req, res) => {
         if (user_email) updateData.email = user_email;
         if (user_phone) updateData.user_phone = user_phone;
         if (password) updateData.password = password;
+        if (user_dob) updateData.dob = user_dob;
+        if (req.file) updateData.user_img = req.file.filename
 
         const result = await userModal.updateOne(
             { _id: user_id },
             { $set: updateData }
         );
 
-        console.log(result);
+        // console.log(result);
 
         if (result.modifiedCount > 0) {
             // ✅ Send success email
             await transporter.sendMail({
-                from: 'infoastrotruth@gmail.com',
-                to: user_email || userObjData.email,
-                subject: "✅ Profile Updated Successfully",
-                html: `<p>Hello ${user_name || userObjData.user_name},</p>
-                       <p>Your profile has been updated successfully.</p>`
-            });
+    from: 'infoastrotruth@gmail.com',
+    to: user_email || userObjData.email,
+    subject: "✅ Profile Updated Successfully",
+    html: `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; color: #333; }
+        .container { padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; max-width: 600px; margin: auto; }
+        h2 { color: #4CAF50; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h2>✅ Profile Update Successful</h2>
+        <p>Hi <strong>${user_name || userObjData.user_name}</strong>,</p>
+        <p>Your profile has been updated successfully on <strong>AstroTruth</strong>.</p>
+        <p>If you did not make this change, please contact our support team immediately.</p>
+        <p>Thank you for being with us.</p>
+        <br>
+        <p>Warm regards,</p>
+        <p><strong>AstroTruth Team</strong></p>
+      </div>
+    </body>
+    </html>
+    `
+});
 
-            return res.status(200).json({ status: 1, msg: "Update Successfully" });
+
+            return res.status(200).json({ status:true, msg: "Update Successfully" });
         } else {
             // ❌ Send failed update email
             await transporter.sendMail({
