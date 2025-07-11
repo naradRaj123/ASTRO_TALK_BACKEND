@@ -422,7 +422,7 @@ exports.VerifyAstroOTP = async (req, res) => {
   const isExpired = new Date(astrologer.otp.expiresAt) < new Date();
   const isMatch = astrologer.otp.code == otp;
   console.log(isExpired)
-  // console.log(astrologer.otp.code===otp)
+  
   if (!isMatch || isExpired) {
     return res.status(400).json({ status: false, msg: 'Invalid or expired OTP' });
   }
@@ -450,7 +450,7 @@ exports.ResetPasswordAstroAfterOTP = async (req, res) => {
   astrologer.otp = undefined;
   await astrologer.save();
 
-  return res.status(200).json({ status: true, msg: 'Password reset successfully' });
+  res.status(200).json({ status: true, msg: 'Password reset successfully' });
 };
 
 

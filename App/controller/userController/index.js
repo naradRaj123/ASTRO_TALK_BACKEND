@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const {sendOTPEmail}=require('../../../utils/sendMail')
 
 
 // user register function
@@ -284,7 +285,7 @@ exports.EditByUserId = async (req, res) => {
 exports.Userlist=async(req,res)=>{
      try {
         const userList = await userModal.find({}, { password: 0 });
-        if (!userList) return res.status(404).json({ status: false, msg: "Astrologer not Available !" })
+        if (!userList) return res.status(404).json({ status: false, msg: "users not Available !" })
         return res.status(200).json({ status: true, data: userList })
       } catch (error) {
         return res.status(500).json({ status: false, msg: "Something went wrong please try sometime" });
@@ -317,3 +318,76 @@ exports.UpdateStatus = async (req, res) => {
 
 
 }
+
+//******* */ user auth changes apis (forgot) *********//
+
+// send otp
+exports.sendOtpOfUsers= async (req,res)=>{
+      try {
+    const { email } = req.body;
+
+    const users = await userModal.findOne({ email });
+    if (!users) {
+      return res.status(404).json({ status: false, msg: 'Email not found' });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000); // 6-digit OTP
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    users.otp = {
+      code: otp,
+      expiresAt
+    };
+
+    await users.save();
+
+    await sendOTPEmail(email, otp);
+    res.status(200).json({ status: true, msg: 'A verification code has been sent to your email. It will expire in 10 minutes. ' });
+
+  } catch (error) {
+    console.error('SendOTPByEmail error:', error);
+    res.status(500).json({ status: false, msg: 'Server error', error: error.message });
+  }
+}
+
+// verify otp
+exports.verifyOtpUser= async (req,res)=>{
+    const { email, otp } = req.body;
+
+  const users = await userModal.findOne({ email });
+  if (!users || !users.otp) {
+    return res.status(400).json({ status: false, msg: 'OTP not found or expired' });
+  }
+
+  const isExpired = new Date(users.otp.expiresAt) < new Date();
+  const isMatch = users.otp.code == otp;
+  console.log(isMatch)
+  if (!isMatch || isExpired) {
+    return res.status(400).json({ status: false, msg: 'Invalid or expired OTP' });
+  }
+
+  users.otp.verified = true;
+  await users.save();
+
+  res.status(200).json({ status: true, msg: 'OTP verified successfully' });
+}
+
+// reset password
+exports.resetPasswordUser=async(req,res)=>{
+     const { email, newPassword } = req.body;
+
+  const users = await userModal.findOne({ email });
+  if (!users || !users.otp || !users.otp.verified) {
+    return res.status(400).json({ status: false, msg: 'OTP not verified or expired' });
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  users.password = hashedPassword;
+
+  // Clear OTP
+  users.otp = undefined;
+  await users.save();
+
+  return res.status(200).json({ status: true, msg: 'Password reset successfully' });
+}
+
