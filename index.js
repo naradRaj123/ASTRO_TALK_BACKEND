@@ -10,13 +10,7 @@ const { Server } = require('socket.io');
 const app = express();
 const server = http.createServer(app);
 
-// Setup Socket.IO
-// const io = new Server(server, {
-//   cors: {
-//     origin: ['http://astrotruth.in'],
-//     methods: ['GET', 'POST'],
-//   },
-// });
+
 
 // Middlewares
 app.use(cors({ origin: "*" }));
@@ -47,31 +41,4 @@ mongoose.connect(process.env.MONGODB_URI, {
   console.error('❌ MongoDB connection error:', err.message);
 });
 
-// Socket.IO Logic
-// io.on('connection', (socket) => {
-//   console.log('🟢 New client connected:', socket.id);
 
-//   // Join astrologer's private room
-//   socket.on('join-room', ({ userType, astrologerId }) => {
-//     if (userType === 'astrologer' && astrologerId) {
-//       socket.join(`astrologer-${astrologerId}`);
-//       console.log(`🔔 Astrologer joined room: astrologer-${astrologerId}`);
-//     }
-//   });
-
-//   // User initiates call to astrologer
-//   socket.on('start-call', ({ astrologerId, userId, channelName, token, uid }) => {
-//     console.log(`📞 User ${userId} is calling astrologer ${astrologerId}`);
-//     io.to(`astrologer-${astrologerId}`).emit('incoming-call', {
-//       userId,
-//       channelName,
-//       token,
-//       uid,
-//     });
-//   });
-
-//   // Handle disconnect
-//   socket.on('disconnect', () => {
-//     console.log('🔴 Client disconnected:', socket.id);
-//   });
-// });

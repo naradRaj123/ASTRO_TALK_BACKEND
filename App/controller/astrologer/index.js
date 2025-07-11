@@ -9,6 +9,7 @@ const fs = require('fs')
 const path = require('path');
 const { default: axios } = require('axios');
 var validatorEmail = require('email-validator');
+const paymentSchema=require('../../modal/paymentRequest/index');
 
 
 // delete image function
@@ -326,6 +327,133 @@ exports.registerAstrologer = async (req, res) => {
   }
 };
 
+// astrologer update 
+exports.UpdateAstroProfile = async (req, res) => {
+  try {
+    const astrologerId = req.params.id; // fixed param
+    const updateData = req.body;
+
+
+    const existingAstrologer = await astroSchema.findById(astrologerId);
+    if (!existingAstrologer) {
+      return res.status(404).json({ status: false, msg: "Astrologer not found" });
+    }
+
+    // image update
+    if (req.file) {
+      updateData.profileImg = req.file.filename;
+
+      const profilePic=req.file.filename
+      // if old image avilable
+      if(existingAstrologer.profileImg){
+        deleteFileIfExists(`upload/${profilePic}`)
+      }
+
+    }
+
+    const updatedAstrologer = await astroSchema.findByIdAndUpdate(
+      astrologerId,
+      { $set: updateData },
+      { new: true }
+    );
+
+    if (!updatedAstrologer) {
+      return res.status(404).json({ status: false, msg: "Astrologer not found" });
+    }
+
+    res.status(200).json({
+      status: true,
+      msg: "Astrologer updated successfully",
+      data: updatedAstrologer,
+    });
+  } catch (error) {
+    console.error("Update error:", error);
+    res.status(500).json({
+      status: false,
+      msg: "Something went wrong",
+      error: error.message,
+    });
+  }
+};
+
+
+
+// send otp
+const {sendOTPEmail}=require('../../../utils/sendMail');
+
+// send otp
+exports.SendAstroOTPByEmail=async(req,res)=>{
+    try {
+    const { email } = req.body;
+
+    const astrologer = await astroSchema.findOne({ email });
+    if (!astrologer) {
+      return res.status(404).json({ status: false, msg: 'Email not found' });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000); // 6-digit OTP
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    astrologer.otp = {
+      code: otp,
+      expiresAt
+    };
+
+    await astrologer.save();
+
+    await sendOTPEmail(email, otp);
+    res.status(200).json({ status: true, msg: 'OTP sent to email' });
+
+  } catch (error) {
+    console.error('SendAstroOTPByEmail error:', error);
+    res.status(500).json({ status: false, msg: 'Server error', error: error.message });
+  }
+}
+
+// verify otp
+exports.VerifyAstroOTP = async (req, res) => {
+  const { email, otp } = req.body;
+
+  const astrologer = await astroSchema.findOne({ email });
+  if (!astrologer || !astrologer.otp) {
+    return res.status(400).json({ status: false, msg: 'OTP not found or expired' });
+  }
+
+  const isExpired = new Date(astrologer.otp.expiresAt) < new Date();
+  const isMatch = astrologer.otp.code == otp;
+  console.log(isExpired)
+  // console.log(astrologer.otp.code===otp)
+  if (!isMatch || isExpired) {
+    return res.status(400).json({ status: false, msg: 'Invalid or expired OTP' });
+  }
+
+  astrologer.otp.verified = true;
+  await astrologer.save();
+
+  res.status(200).json({ status: true, msg: 'OTP verified successfully' });
+};
+
+
+// give forgett password
+exports.ResetPasswordAstroAfterOTP = async (req, res) => {
+  const { email, newPassword } = req.body;
+
+  const astrologer = await astroSchema.findOne({ email });
+  if (!astrologer || !astrologer.otp || !astrologer.otp.verified) {
+    return res.status(400).json({ status: false, msg: 'OTP not verified or expired' });
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  astrologer.password = hashedPassword;
+
+  // Clear OTP
+  astrologer.otp = undefined;
+  await astrologer.save();
+
+  return res.status(200).json({ status: true, msg: 'Password reset successfully' });
+};
+
+
 // astrologer login
 exports.loginAstro = async (req, res) => {
   const { email, password } = req.body
@@ -334,7 +462,7 @@ exports.loginAstro = async (req, res) => {
 
     // missing field require
     if (!email || !password) { return res.status(400).json({ status: false, msg: "Missing required fields." }) }
-
+    console.log(email)
     // email exits or not
     const isValidAstro = await astroSchema.findOne({ email });
     if (!isValidAstro) return res.status(404).json({ status: true, msg: "Email not registered." })
@@ -345,6 +473,10 @@ exports.loginAstro = async (req, res) => {
       return res.status(401).json({ status: 0, msg: "Incorrect password" });
     }
 
+    // is verified account
+    if(!isValidAstro.status) return res.status(403).json({ status: true, msg: "Your account is pending verification by the administrator. Please wait for approval before logging in." })
+        
+
     if (!process.env.JWT_TOKEN_KEY) {
       return res.status(401).json({ status: false, msg: "JWT_TOKEN_KEY is not defined in environment variables." });
     }
@@ -352,18 +484,26 @@ exports.loginAstro = async (req, res) => {
     // Create JWT token
     const token = jwt.sign({ id: isValidAstro._id }, process.env.JWT_TOKEN_KEY, { expiresIn: '1d' });
 
+    // const { password, ...astroData } = isValidAstro._doc;
+    // console.log(astroData);
+    // isValidAstro.toObject();
+    // delete astroData.password;
+    // console.log(astroData);
+
+
     return res.status(200).json({
       status: true,
       msg: "Login successful",
       token,
       // staticPath:'https://back-end-civil.onrender.com/',
-      data: {
-        id: isValidAstro._id,
-        astroName: isValidAstro.astroName,
-        email: isValidAstro.email,
-        mobile: isValidAstro.mobile,
-        profileimg: isValidAstro.profileImg
-      }
+      // data: {
+      //   id: isValidAstro._id,
+      //   astroName: isValidAstro.astroName,
+      //   email: isValidAstro.email,
+      //   mobile: isValidAstro.mobile,
+      //   profileimg: isValidAstro.profileImg
+      // }
+      data:isValidAstro
     });
 
   } catch (error) {
@@ -470,52 +610,43 @@ exports.astrolist = async (req, res) => {
   }
 }
 
+// withdrawal payment request
+exports.RequestPayment=async (req,res)=>{
+  const {amount,astrologerId}=req.body;
+
+  try{
+
+    // get astrologer details
+    const isValidAstrologer=await astroSchema.findOne({_id:astrologerId});
+    console.log(isValidAstrologer);
+
+    if(!isValidAstrologer) return res.status(404).json({ status: false, msg: "Astrolger Not found" });
+    
+    if(isValidAstrologer.wallet < amount){
+      return res.status(404).json({ status: false, msg: "Balance Insufficent" });
+    }
+
+    const paymentOrder=new paymentSchema({
+      astrologerId:isValidAstrologer._id,
+      requestAmount:amount,
+      paymentStatus:false
+    })
+    const response=await paymentOrder.save();
+    if(response){
+      return res.status(200).json({ status: true, msg: 'Your withdrawal request has been successfully submitted to the administration. Please allow up to 24 hours for processing.' });
+    }else{
+      return res.status(500).json({ status: false, msg: 'Payment withdrawal Request failed.' });
+    }
+
+
+  }catch(error){
+    return res.status(500).json({ status: false, msg: "Something went wrong please try sometime" }); 
+  }
+
+}
 
 
 
-// astrologer call
-// const io=require('../../../index');
-// const astrologerSocketMap = {};
-// exports.astroCall=async(req,res)=>{
-//   try {
-//     const { userId, astrologerId } = req.body;
-//     const channelName="call_user123_astro456";
-
-//     if (!userId || !astrologerId || !channelName) {
-//       return res.status(400).json({ success: false, msg: "Missing required fields" });
-//     }
-
-//     const astrologerSocketId = astrologerSocketMap[astrologerId];
-//     if (!astrologerSocketId) {
-//       return res.status(404).json({ success: false, msg: "Astrologer is not online" });
-//     }
-
-//     // Example Agora token generation (pseudo-code, replace with real token logic)
-//     const agoraToken = "dummy_agora_token_" + channelName;
-
-//     // Emit call request to astrologer's socket
-//     io.to(astrologerSocketId).emit("incoming-call", {
-//       fromUserId: userId,
-//       channelName,
-//       token: agoraToken,
-//     });
-
-//     return res.status(200).json({
-//       success: true,
-//       msg: "Call initiated successfully",
-//       data: {
-//         to: astrologerId,
-//         token: agoraToken,
-//         channelName,
-//       }
-//     });
-
-//   } catch (err) {
-//     console.error("astroCall error:", err.message);
-//     return res.status(500).json({ success: false, msg: "Server error" });
-//   }
-
-// }
 
 
 // admin api action
