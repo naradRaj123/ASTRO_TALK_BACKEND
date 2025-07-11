@@ -10,6 +10,13 @@ router.post('/web/astro',upload.fields([{ name: 'profileimg', maxCount: 1 }, { n
 router.post('/web/astro/login',astroController.loginAstro);
 router.post('/web/astro/loginMob',astroController.loginWithMobile);
 router.get('/web/astro/astrolist',astroController.astrolist);
+router.post('/web/astro/updateById/:id',upload.single('profileImg'),astroController.UpdateAstroProfile);
+router.post('/web/astro/sendOtp',astroController.SendAstroOTPByEmail);
+router.post('/web/astro/verifyOtp',astroController.VerifyAstroOTP);
+router.post('/web/astro/resetPassword',astroController.ResetPasswordAstroAfterOTP);
+// withdrawal
+router.post('/create-order',astroController.RequestPayment);
+
 
 // astrologer audio call
 // router.post('/api/start-call',astroController.astroCall)
