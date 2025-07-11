@@ -41,7 +41,12 @@ const UserRegisterSchema=new mongoose.Schema({
     type:String,
     require:true,
     default:null,
-   }
+   },
+   otp: {
+        code: { type: Number },
+        expiresAt: { type: Date },
+        verified: { type: Boolean, default: false }
+    },
 },{
     timeseries:true,
 });
