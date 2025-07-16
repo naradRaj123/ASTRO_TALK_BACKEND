@@ -377,6 +377,41 @@ exports.UpdateAstroProfile = async (req, res) => {
 };
 
 
+// astrologer info by id
+exports.AstrologerInfoById= async (req,res)=>{
+  const {astrologerId}=req.body
+
+  if (!astrologerId) {
+    return res.status(400).json({
+      status: false,
+      message: 'Astrologer ID is required',
+    });
+  }
+
+  try {
+    const astrologer = await astroSchema.findById({_id:astrologerId});
+    if (!astrologer) {
+      return res.status(404).json({
+        status: false,
+        message: 'Astrologer not found',
+      });
+    }
+
+    return res.status(200).json({
+      status: true,
+      message: 'Astrologer info fetched successfully',
+      data: astrologer,
+    });
+  } catch (error) {
+    console.error('Error fetching astrologer info:', error);
+    return res.status(500).json({
+      status: false,
+      message: 'Something went wrong while fetching astrologer info',
+    });
+  }
+
+}
+
 
 // send otp
 const {sendOTPEmail}=require('../../../utils/sendMail');

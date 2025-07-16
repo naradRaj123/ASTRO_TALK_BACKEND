@@ -14,6 +14,7 @@ router.post('/web/astro/updateById/:id',upload.single('profileImg'),astroControl
 router.post('/web/astro/sendOtp',astroController.SendAstroOTPByEmail);
 router.post('/web/astro/verifyOtp',astroController.VerifyAstroOTP);
 router.post('/web/astro/resetPassword',astroController.ResetPasswordAstroAfterOTP);
+router.post('/web/astro/astrolinfo',astroController.AstrologerInfoById);
 // withdrawal
 router.post('/create-order',astroController.RequestPayment);
 
