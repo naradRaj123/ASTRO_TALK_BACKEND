@@ -153,3 +153,45 @@ exports.MatchMakingAashakoot = async (req, res) => {
   }
 };
 
+//nakshatra-match
+exports.NakshatraMatch= async (req,res)=>{
+  try {
+    const {
+      boy_star,
+      girl_star,
+      lang = "en",
+    } = req.query;
+    
+    console.log(boy_star)
+    if (!boy_star || !girl_star) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const payload = {
+      api_key: process.env.VEDIC_API_KEY || "349e48af-b57e-58aa-ad9c-623f1ab5a5f7",
+      boy_star,
+      girl_star,
+      lang,
+    };
+
+    const response = await axios.get(
+      "https://api.vedicastroapi.com/v3-json/matching/nakshatra-match",
+      {
+        params:payload,
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    return res.status(200).json(response.data);
+
+  } catch (error) {
+    console.error("❌ Dashakoot API Error:", error.response?.data || error.message);
+    return res.status(500).json({
+      error: "Internal Server Error",
+      message: error.response?.data || error.message
+    });
+  }
+}
+

@@ -4,6 +4,7 @@ const express=require('express');
 
 const router=express.Router();
 const astroController=require('../../controller/astrologer/index')
+const paymentController=require('../../controller/paymentController/index')
 const upload=require('../../multer');
 
 router.post('/web/astro',upload.fields([{ name: 'profileimg', maxCount: 1 }, { name: 'govDoc', maxCount: 1 }]),astroController.registerAstrologer)
@@ -16,7 +17,7 @@ router.post('/web/astro/verifyOtp',astroController.VerifyAstroOTP);
 router.post('/web/astro/resetPassword',astroController.ResetPasswordAstroAfterOTP);
 router.post('/web/astro/astrolinfo',astroController.AstrologerInfoById);
 // withdrawal
-router.post('/create-order',astroController.RequestPayment);
+router.post('/create-order',paymentController.createOrder);
 
 
 // astrologer audio call
